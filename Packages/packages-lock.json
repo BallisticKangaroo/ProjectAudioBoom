@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.ballistickangaroo.unitysos": {
+      "version": "https://github.com/BallisticKangaroo/UnitySOS.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "bd96567a753add905768219818df1a94bf5641ed"
+    },
     "com.unity.burst": {
       "version": "1.8.7",
       "depth": 1,

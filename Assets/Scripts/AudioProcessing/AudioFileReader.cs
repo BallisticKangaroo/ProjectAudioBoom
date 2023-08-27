@@ -6,8 +6,11 @@ using UnityEngine.Networking;
 
 public class AudioFileReader : MonoBehaviour
 {
-    [SerializeField]
+    [SerializeField, Tooltip("Path to the song on disk")]
     private string _pathToFile = "D:/Music/01-ADTR.mp3";
+
+    [SerializeField, Tooltip("ScriptableObject where the current song clip will be stored")]
+    private AudioClipScriptableState _currentSong;
 
     private AudioSource _audioSource;
     private AudioClip _audioClip;
