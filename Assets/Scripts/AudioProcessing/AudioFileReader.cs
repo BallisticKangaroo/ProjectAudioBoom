@@ -30,6 +30,8 @@ public class AudioFileReader : MonoBehaviour
 
         _audioClip = await LoadClip(_pathToFile);
 
+        _currentSong.Value = _audioClip;
+
         Debug.Log("Clip loaded!");
     }
 
