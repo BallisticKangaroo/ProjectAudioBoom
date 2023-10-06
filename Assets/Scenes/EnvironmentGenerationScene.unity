@@ -767,7 +767,8 @@ MonoBehaviour:
   _frequencyMeterPrefab: {fileID: 1537250953964164045, guid: 4dfa8e99ed2ccbd4390563fc851b3ac1,
     type: 3}
   _spectrumData: {fileID: 11400000, guid: 94fcfb50166fbc94299366a1b9cc0f05, type: 2}
-  _meterCount: 64
+  _frequencyBands: {fileID: 11400000, guid: 2c0d2e3f496fc794c969395fc5bac2c1, type: 2}
+  _smoothingFactor: 0.5
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -10,9 +10,11 @@ public class FrequencyBandsSOEditor : Editor
 
         var script = (FrequencyBandsSO)target;
 
-        if (GUILayout.Button("Create Piano Key Frequencies", GUILayout.Height(40)))
+        GUILayout.Space(EditorGUIUtility.singleLineHeight);
+
+        if (GUILayout.Button("Create Frequencies", GUILayout.Height(40)))
         {
-            script.CreatePianoKeyFrequencies();
+            script.CreateFrequenciesFromSamplingCurve();
         }
     }
 }

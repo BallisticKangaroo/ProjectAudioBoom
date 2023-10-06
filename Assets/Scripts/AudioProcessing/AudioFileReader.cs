@@ -39,7 +39,8 @@ public class AudioFileReader : MonoBehaviour
     {
         if (GUI.Button(new Rect(5,5, 150, 50), "Play"))
         {
-            _audioSource?.PlayOneShot(_audioClip);
+            _audioSource.clip = _audioClip;
+            _audioSource?.Play();
         }
 
         if (GUI.Button(new Rect(5, 60, 150, 50), "Stop"))

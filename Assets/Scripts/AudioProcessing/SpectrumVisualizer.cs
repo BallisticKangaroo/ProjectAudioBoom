@@ -1,8 +1,6 @@
 using System.Collections.Generic;
-using Unity.Collections.LowLevel.Unsafe;
-using Unity.VisualScripting;
+using System.Linq;
 using UnityEngine;
-using static UnityEngine.Rendering.DebugUI;
 
 public class SpectrumVisualizer : MonoBehaviour
 {
@@ -12,9 +10,8 @@ public class SpectrumVisualizer : MonoBehaviour
     [SerializeField, Tooltip("RuntimeSet for spectrum data to read from")]
     private FloatRuntimeSet _spectrumData;
 
-    [Tooltip("How many meters are displayed?")]
-    [SerializeField, Range(2, 256, order = 1)]
-    private int _meterCount = 16;
+    [SerializeField, Tooltip("Frequency bands to use")]
+    private FrequencyBandsSO _frequencyBands;
 
     [Tooltip("Smoothing of the meter movement. Higher value means less smoothing.")]
     [SerializeField, Range(0.01f, 1)]
@@ -22,30 +19,45 @@ public class SpectrumVisualizer : MonoBehaviour
 
     private List<FrequencyMeter> _frequencyMeters = new();
 
+    private float _meterSpacing = 0.5f;
 
-    private float meterSpacing = 0.5f;
+    private float _samplingRate;
+
+    void Awake()
+    {
+        _samplingRate = AudioSettings.outputSampleRate;
+    }
 
     void Start()
     {
-        int halfNumberOfMeters = _meterCount / 2; // Number of meters on each side
-        bool evenNumberOfMeters = _meterCount % 2 == 0;
+        // The meter cound is defined by the number of frequency bands
+        int meterCount = _frequencyBands.Bands.Count - 1; // First frequency band is from index 0-1... last is n-1 to n.
+        int halfNumberOfMeters = meterCount / 2; // Number of meters on each side
+        bool evenNumberOfMeters = meterCount % 2 == 0;
         float leftShift = (evenNumberOfMeters ? halfNumberOfMeters - 0.5f : halfNumberOfMeters);
-        float spacingShift = (evenNumberOfMeters ? meterSpacing * (halfNumberOfMeters - 1) + meterSpacing / 2.0f : meterSpacing * halfNumberOfMeters);
+        float spacingShift = (evenNumberOfMeters ? _meterSpacing * (halfNumberOfMeters - 1) + _meterSpacing / 2.0f : _meterSpacing * halfNumberOfMeters);
         float leftMostShift = leftShift + spacingShift;
-        for (int i = 0; i < _meterCount; i++)
+        for (int i = 0; i < meterCount; i++)
         {
-            float positionShift = -leftMostShift + i + i * meterSpacing;
+            float positionShift = -leftMostShift + i + i * _meterSpacing;
             var position = transform.position + new Vector3(positionShift, 0, 0);
             var meter = Instantiate(_frequencyMeterPrefab, position, Quaternion.identity, transform).GetComponent<FrequencyMeter>();
             _frequencyMeters.Add(meter);
         }
+
+        Debug.Log($"We have {_spectrumData.Items.Count} frequency samples.");
+        Debug.Log($"We have {_frequencyBands.Bands.Count-1} frequency bands.");
     }
 
     void Update()
     {
+        GetBandedFrequencySums(out List<float> frequencySums);
+
         for (int i = 0; i < _frequencyMeters.Count; i++)
         {
-            _frequencyMeters[i].Frequency = Mathf.Lerp(_frequencyMeters[i].transform.localScale.y, Mathf.Clamp(_spectrumData.Items[i] * 1000, 0, 100), _smoothingFactor);
+            //_frequencyMeters[i].Frequency = Mathf.Lerp(_frequencyMeters[i].transform.localScale.y, Mathf.Clamp(_spectrumData.Items[i] * 1000, 0, 100), _smoothingFactor);
+
+            _frequencyMeters[i].Frequency = Mathf.Lerp(_frequencyMeters[i].transform.localScale.y, Mathf.Clamp(frequencySums[i] * 100, 0, 100), _smoothingFactor);
         }
 
         for (int i = 1; i < _spectrumData.Items.Count - 1; i++)
@@ -58,6 +70,40 @@ public class SpectrumVisualizer : MonoBehaviour
     }
 
 
+    private void GetBandedFrequencySums(out List<float> frequencySums)
+    {
+        frequencySums = new List<float>();
+        frequencySums.AddRange(Enumerable.Repeat(0f,_frequencyBands.Bands.Count - 1));
+
+        // If there is no spectrum data available we cannot
+        if (_spectrumData.Items.Count == 0)
+        {
+            return;
+        }
+
+        // We assume the frequency bands are sorted
+        int frequencyBandIndex = 0;
+        for (int i = 0; i < _spectrumData.Items.Count; i++)
+        {
+            // Converison to Hz: hz = freq * (samplingRate / 2) / samplingCount
+            int frequencyBin = i * (int)((_samplingRate / 2) / _spectrumData.Items.Count);
+
+            // Update the frequency band index
+            while (frequencyBin >= _frequencyBands.Bands[frequencyBandIndex+1])
+            {
+                frequencyBandIndex++;
+            }
+
+            //Debug.Log($"FrequencyIndex is {frequencyBandIndex}");
+
+            frequencySums[frequencyBandIndex] += _spectrumData.Items[i];
+        }
+
+        if (frequencySums.Count != _frequencyMeters.Count)
+        {
+            Debug.LogError("SpectrumVisualizer: number of summed frequencies not equal to number of frequency meters.");
+        }
+    }
 }
 
 //public class AudioMeasureCS : MonoBehaviour
